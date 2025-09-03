@@ -43,6 +43,7 @@
             pright = new Panel();
             btntxt = new Button();
             dgv = new DataGridView();
+            btnexport = new Button();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             pleft.SuspendLayout();
             pright.SuspendLayout();
@@ -184,6 +185,7 @@
             // pright
             // 
             pright.BorderStyle = BorderStyle.FixedSingle;
+            pright.Controls.Add(btnexport);
             pright.Controls.Add(btntxt);
             pright.Controls.Add(dgv);
             pright.Location = new Point(504, 84);
@@ -213,6 +215,15 @@
             dgv.RowHeadersWidth = 51;
             dgv.Size = new Size(423, 366);
             dgv.TabIndex = 13;
+            // 
+            // btnexport
+            // 
+            btnexport.Location = new Point(12, 324);
+            btnexport.Name = "btnexport";
+            btnexport.Size = new Size(142, 29);
+            btnexport.TabIndex = 13;
+            btnexport.Text = "Export ke Text";
+            btnexport.UseVisualStyleBackColor = true;
             // 
             // home
             // 
@@ -252,7 +263,7 @@
         private TextBox txtbactivity;
         private Panel pright;
         private DataGridView dgv;
-        private Button button1;
+        private Button btnexport;
         private Button btntxt;
         private DateTimePicker dtptimes;
     }

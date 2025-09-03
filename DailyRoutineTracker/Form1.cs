@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;   // BindingList
+using System.ComponentModel;   
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,7 +11,6 @@ namespace DailyRoutineTracker
 {
     public partial class home : Form
     {
-        // ================== MODEL ==================
         public class RoutineItem
         {
             public Guid Id { get; set; } = Guid.NewGuid();
@@ -211,7 +210,7 @@ namespace DailyRoutineTracker
         }
 
         // ================== EXPORT TXT (btntxt) ==================
-        private void btntxt_Click(object sender, EventArgs e)
+        private void btnexport_Click(object sender, EventArgs e)
         {
             using var sfd = new SaveFileDialog
             {
