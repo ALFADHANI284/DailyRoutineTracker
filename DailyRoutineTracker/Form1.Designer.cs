@@ -30,25 +30,22 @@
         {
             dataGridView1 = new DataGridView();
             btntambah = new Button();
-            label1 = new Label();
+            judul = new Label();
             pleft = new Panel();
-            flpActions = new FlowLayoutPanel();
+            dtptimes = new DateTimePicker();
+            label2 = new Label();
             txtbactivity = new TextBox();
             lblkegiatan = new Label();
             dtptime = new DateTimePicker();
             lblwkt = new Label();
             dtpdate = new DateTimePicker();
             lbltngl = new Label();
-            btnhps = new Button();
             pright = new Panel();
-            pSearchBar = new Panel();
-            btnjson = new Button();
+            btntxt = new Button();
             dgv = new DataGridView();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             pleft.SuspendLayout();
-            flpActions.SuspendLayout();
             pright.SuspendLayout();
-            pSearchBar.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgv).BeginInit();
             SuspendLayout();
             // 
@@ -67,7 +64,7 @@
             btntambah.FlatAppearance.BorderSize = 0;
             btntambah.FlatStyle = FlatStyle.Flat;
             btntambah.ForeColor = Color.White;
-            btntambah.Location = new Point(3, 3);
+            btntambah.Location = new Point(4, 173);
             btntambah.Name = "btntambah";
             btntambah.Size = new Size(110, 34);
             btntambah.TabIndex = 4;
@@ -75,21 +72,23 @@
             btntambah.UseVisualStyleBackColor = false;
             btntambah.Click += btntambah_Click;
             // 
-            // label1
+            // judul
             // 
-            label1.AutoSize = true;
-            label1.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
-            label1.Location = new Point(178, 19);
-            label1.Name = "label1";
-            label1.Size = new Size(335, 41);
-            label1.TabIndex = 5;
-            label1.Text = "Daily Routine Tracker  ";
-            label1.Click += label1_Click;
+            judul.AutoSize = true;
+            judul.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
+            judul.Location = new Point(288, 22);
+            judul.Name = "judul";
+            judul.Size = new Size(335, 41);
+            judul.TabIndex = 5;
+            judul.Text = "Daily Routine Tracker  ";
+            judul.Click += label1_Click;
             // 
             // pleft
             // 
             pleft.BorderStyle = BorderStyle.FixedSingle;
-            pleft.Controls.Add(flpActions);
+            pleft.Controls.Add(dtptimes);
+            pleft.Controls.Add(label2);
+            pleft.Controls.Add(btntambah);
             pleft.Controls.Add(txtbactivity);
             pleft.Controls.Add(lblkegiatan);
             pleft.Controls.Add(dtptime);
@@ -100,33 +99,45 @@
             pleft.ImeMode = ImeMode.NoControl;
             pleft.Location = new Point(20, 84);
             pleft.Name = "pleft";
-            pleft.Size = new Size(340, 205);
+            pleft.Size = new Size(344, 221);
             pleft.TabIndex = 11;
             pleft.Paint += pleft_Paint;
             // 
-            // flpActions
+            // dtptimes
             // 
-            flpActions.BorderStyle = BorderStyle.FixedSingle;
-            flpActions.Controls.Add(btntambah);
-            flpActions.Location = new Point(3, 148);
-            flpActions.Margin = new Padding(0, 8, 0, 0);
-            flpActions.Name = "flpActions";
-            flpActions.Size = new Size(120, 43);
-            flpActions.TabIndex = 13;
+            dtptimes.CustomFormat = "HH : mm";
+            dtptimes.Format = DateTimePickerFormat.Custom;
+            dtptimes.Location = new Point(218, 36);
+            dtptimes.Name = "dtptimes";
+            dtptimes.ShowUpDown = true;
+            dtptimes.Size = new Size(102, 27);
+            dtptimes.TabIndex = 19;
+            dtptimes.ValueChanged += dateTimePicker1_ValueChanged_1;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Font = new Font("Segoe UI", 12F);
+            label2.Location = new Point(170, 34);
+            label2.Name = "label2";
+            label2.Size = new Size(42, 28);
+            label2.TabIndex = 18;
+            label2.Text = "-->";
+            label2.Click += label2_Click;
             // 
             // txtbactivity
             // 
             txtbactivity.BorderStyle = BorderStyle.FixedSingle;
-            txtbactivity.Location = new Point(69, 68);
+            txtbactivity.Location = new Point(70, 72);
             txtbactivity.Multiline = true;
             txtbactivity.Name = "txtbactivity";
-            txtbactivity.Size = new Size(251, 69);
+            txtbactivity.Size = new Size(251, 95);
             txtbactivity.TabIndex = 13;
             // 
             // lblkegiatan
             // 
             lblkegiatan.AutoSize = true;
-            lblkegiatan.Location = new Point(3, 68);
+            lblkegiatan.Location = new Point(4, 72);
             lblkegiatan.Name = "lblkegiatan";
             lblkegiatan.Size = new Size(60, 20);
             lblkegiatan.TabIndex = 16;
@@ -139,7 +150,7 @@
             dtptime.Location = new Point(70, 34);
             dtptime.Name = "dtptime";
             dtptime.ShowUpDown = true;
-            dtptime.Size = new Size(250, 27);
+            dtptime.Size = new Size(94, 27);
             dtptime.TabIndex = 15;
             dtptime.ValueChanged += dtptime_ValueChanged;
             // 
@@ -170,60 +181,37 @@
             lbltngl.Text = "Tanggal";
             lbltngl.Click += lbltngl_Click;
             // 
-            // btnhps
-            // 
-            btnhps.BackColor = Color.Red;
-            btnhps.FlatAppearance.BorderSize = 0;
-            btnhps.FlatStyle = FlatStyle.Flat;
-            btnhps.ForeColor = Color.White;
-            btnhps.Location = new Point(253, 403);
-            btnhps.Name = "btnhps";
-            btnhps.Size = new Size(110, 34);
-            btnhps.TabIndex = 5;
-            btnhps.Text = "Hapus";
-            btnhps.UseVisualStyleBackColor = false;
-            // 
             // pright
             // 
             pright.BorderStyle = BorderStyle.FixedSingle;
-            pright.Controls.Add(btnhps);
-            pright.Controls.Add(pSearchBar);
+            pright.Controls.Add(btntxt);
             pright.Controls.Add(dgv);
-            pright.Location = new Point(550, 0);
+            pright.Location = new Point(504, 84);
             pright.Name = "pright";
-            pright.Size = new Size(377, 450);
+            pright.Size = new Size(423, 366);
             pright.TabIndex = 12;
             pright.Paint += pright_Paint;
             // 
-            // pSearchBar
+            // btntxt
             // 
-            pSearchBar.BackColor = Color.White;
-            pSearchBar.BorderStyle = BorderStyle.FixedSingle;
-            pSearchBar.Controls.Add(btnjson);
-            pSearchBar.Dock = DockStyle.Top;
-            pSearchBar.Location = new Point(0, 0);
-            pSearchBar.Name = "pSearchBar";
-            pSearchBar.Size = new Size(375, 44);
-            pSearchBar.TabIndex = 0;
-            // 
-            // btnjson
-            // 
-            btnjson.Location = new Point(228, 3);
-            btnjson.Name = "btnjson";
-            btnjson.Size = new Size(142, 29);
-            btnjson.TabIndex = 1;
-            btnjson.Text = "Export JSON";
-            btnjson.UseVisualStyleBackColor = true;
+            btntxt.BackColor = Color.Red;
+            btntxt.ForeColor = Color.Transparent;
+            btntxt.Location = new Point(12, 408);
+            btntxt.Name = "btntxt";
+            btntxt.Size = new Size(142, 29);
+            btntxt.TabIndex = 1;
+            btntxt.Text = "Export Text";
+            btntxt.UseVisualStyleBackColor = false;
+            btntxt.Click += btntxt_Click_1;
             // 
             // dgv
             // 
-            dgv.BackgroundColor = Color.FromArgb(224, 224, 224);
+            dgv.BackgroundColor = Color.White;
             dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgv.Dock = DockStyle.Fill;
-            dgv.Location = new Point(0, 0);
+            dgv.Location = new Point(-1, -1);
             dgv.Name = "dgv";
             dgv.RowHeadersWidth = 51;
-            dgv.Size = new Size(375, 448);
+            dgv.Size = new Size(423, 366);
             dgv.TabIndex = 13;
             // 
             // home
@@ -234,7 +222,7 @@
             ClientSize = new Size(926, 450);
             Controls.Add(pright);
             Controls.Add(pleft);
-            Controls.Add(label1);
+            Controls.Add(judul);
             Controls.Add(dataGridView1);
             Name = "home";
             Text = "Home";
@@ -242,9 +230,7 @@
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
             pleft.ResumeLayout(false);
             pleft.PerformLayout();
-            flpActions.ResumeLayout(false);
             pright.ResumeLayout(false);
-            pSearchBar.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgv).EndInit();
             ResumeLayout(false);
             PerformLayout();
@@ -253,7 +239,7 @@
         #endregion
         private DataGridView dataGridView1;
         private Button btntambah;
-        private Label label1;
+        private Label judul;
         private Label label2;
         private Label label3;
         private Label label4;
@@ -264,12 +250,10 @@
         private DateTimePicker dtptime;
         private Label lblkegiatan;
         private TextBox txtbactivity;
-        private FlowLayoutPanel flpActions;
-        private Button btnhps;
         private Panel pright;
-        private Panel pSearchBar;
         private DataGridView dgv;
         private Button button1;
-        private Button btnjson;
+        private Button btntxt;
+        private DateTimePicker dtptimes;
     }
 }

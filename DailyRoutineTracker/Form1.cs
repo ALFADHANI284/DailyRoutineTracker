@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;   // BindingList
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Windows.Forms;
 
@@ -10,50 +11,66 @@ namespace DailyRoutineTracker
 {
     public partial class home : Form
     {
-        // ========= Model =========
+        // ================== MODEL ==================
         public class RoutineItem
         {
             public Guid Id { get; set; } = Guid.NewGuid();
             public DateTime Date { get; set; } = DateTime.Today;
-            public int Hour { get; set; }
-            public int Minute { get; set; }
+
+            // Jam mulai & berakhir
+            public int StartHour { get; set; }
+            public int StartMinute { get; set; }
+            public int EndHour { get; set; }
+            public int EndMinute { get; set; }
+
             public string Activity { get; set; } = "";
 
-            public DateTime At => new DateTime(Date.Year, Date.Month, Date.Day, Hour, Minute, 0);
-            public string Tanggal => At.ToString("dd MMM yyyy");
-            public string Waktu => At.ToString("HH:mm");
+            public DateTime StartAt => new DateTime(Date.Year, Date.Month, Date.Day, StartHour, StartMinute, 0);
+            public DateTime EndAt => new DateTime(Date.Year, Date.Month, Date.Day, EndHour, EndMinute, 0);
+
+            public string Tanggal => Date.ToString("dd MMM yyyy");
+            public string WaktuRange => $"{StartAt:HH:mm}–{EndAt:HH:mm}";
         }
 
-        // ========= State & path =========
+        // ================== STATE & PATH ==================
         private BindingList<RoutineItem> _items = new BindingList<RoutineItem>();
         private readonly BindingSource _bs = new BindingSource();
 
         private readonly string _folder =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                          "DailyRoutineTracker");
-        private string FilePath => Path.Combine(_folder, "routines.json");
+        private string FilePath => Path.Combine(_folder, "routines.json"); // penyimpanan internal
 
         public home()
         {
             InitializeComponent();
-            // Jangan daftar event di sini untuk menghindari duplikasi.
-            // Semua event dihubungkan lewat Designer (Properties → Events).
         }
 
-        // ========= FORM LOAD =========
+        // ================== FORM LOAD ==================
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Setup Date / Time picker
+            // Tanggal
             dtpdate.Format = DateTimePickerFormat.Short;
 
+            // Jam Mulai
             dtptime.Format = DateTimePickerFormat.Custom;
             dtptime.CustomFormat = "HH:mm";
-            dtptime.ShowUpDown = true; // spin-box, tanpa kalender
+            dtptime.ShowUpDown = true;
 
-            // DataGridView setup (tanpa ID, tambah tombol Hapus)
+            // Jam Berakhir
+            dtptimes.Format = DateTimePickerFormat.Custom;
+            dtptimes.CustomFormat = "HH:mm";
+            dtptimes.ShowUpDown = true;
+
+            // Default values
+            dtpdate.Value = DateTime.Today;
+            dtptime.Value = DateTime.Today.AddHours(8);
+            dtptimes.Value = DateTime.Today.AddHours(9);
+
+            // ===== DataGridView setup =====
             dgv.AutoGenerateColumns = false;
-            dgv.AllowUserToAddRows = false;  // hilangkan baris kosong
-            dgv.RowHeadersVisible = false;  // hilangkan header kiri
+            dgv.AllowUserToAddRows = false;   // hilangkan baris input kosong
+            dgv.RowHeadersVisible = false;   // hilangkan header kiri
             dgv.ReadOnly = true;
             dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgv.MultiSelect = false;
@@ -70,8 +87,8 @@ namespace DailyRoutineTracker
             {
                 Name = "colWaktu",
                 HeaderText = "Waktu",
-                DataPropertyName = "Waktu",
-                Width = 80
+                DataPropertyName = "WaktuRange",
+                Width = 120
             });
             dgv.Columns.Add(new DataGridViewTextBoxColumn
             {
@@ -86,36 +103,38 @@ namespace DailyRoutineTracker
                 HeaderText = "",
                 Text = "Hapus",
                 UseColumnTextForButtonValue = true,
-                Width = 70
+                Width = 70,
+                ReadOnly = false
             });
+
+            // event tombol hapus per-baris
+            dgv.CellContentClick -= dgv_CellContentClick;
+            dgv.CellContentClick += dgv_CellContentClick;
+            dgv.CellClick -= dgv_CellClick;   // fallback
+            dgv.CellClick += dgv_CellClick;
 
             // Binding
             _bs.DataSource = _items;
             dgv.DataSource = _bs;
 
-            // Load JSON
+            // Load dari disk (JSON internal)
             Directory.CreateDirectory(_folder);
             var loaded = LoadFromDisk();
-            _items = new BindingList<RoutineItem>(loaded.OrderBy(i => i.At).ToList());
+            _items = new BindingList<RoutineItem>(loaded.OrderBy(i => i.StartAt).ThenBy(i => i.EndAt).ToList());
             _bs.DataSource = _items;
             dgv.DataSource = _bs;
-
-            // Default input
-            dtpdate.Value = DateTime.Today;
-            dtptime.Value = DateTime.Today.AddHours(8);
         }
 
-        // ========= FORM CLOSING =========
+        // ================== FORM CLOSING ==================
         private void Home_FormClosing(object sender, FormClosingEventArgs e)
         {
             SaveToDisk();
         }
 
-        // ========= TAMBAH / SIMPAN =========
+        // ================== TAMBAH ==================
         private void btntambah_Click(object sender, EventArgs e)
         {
-            var activity = GetActivityText(); // validasi bersih
-
+            var activity = GetActivityText();
             if (string.IsNullOrEmpty(activity))
             {
                 MessageBox.Show("Isi 'Kegiatan' dulu ya.", "Info",
@@ -123,11 +142,31 @@ namespace DailyRoutineTracker
                 return;
             }
 
+            var date = dtpdate.Value.Date;
+
+            var sh = dtptime.Value.Hour;
+            var sm = dtptime.Value.Minute;
+
+            var eh = dtptimes.Value.Hour;
+            var em = dtptimes.Value.Minute;
+
+            var start = new DateTime(date.Year, date.Month, date.Day, sh, sm, 0);
+            var end = new DateTime(date.Year, date.Month, date.Day, eh, em, 0);
+
+            if (end <= start)
+            {
+                MessageBox.Show("Jam berakhir harus lebih besar dari jam mulai.", "Validasi Waktu",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             var item = new RoutineItem
             {
-                Date = dtpdate.Value.Date,
-                Hour = dtptime.Value.Hour,
-                Minute = dtptime.Value.Minute,
+                Date = date,
+                StartHour = sh,
+                StartMinute = sm,
+                EndHour = eh,
+                EndMinute = em,
                 Activity = activity
             };
 
@@ -137,26 +176,21 @@ namespace DailyRoutineTracker
             ClearInputs();
         }
 
-        // ========= HAPUS (tombol umum) =========
-        private void btnhps_Click(object sender, EventArgs e)
+        // ================== HAPUS (tombol per baris) ==================
+        private void dgv_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (dgv.CurrentRow?.DataBoundItem is RoutineItem sel)
+            if (e.RowIndex < 0) return;
+            if (dgv.Columns[e.ColumnIndex].Name != "colDel") return;
+
+            if (dgv.Rows[e.RowIndex].DataBoundItem is RoutineItem sel && ConfirmDelete(sel))
             {
-                if (ConfirmDelete(sel))
-                {
-                    _items.Remove(sel);
-                    SaveToDisk();
-                }
-            }
-            else
-            {
-                MessageBox.Show("Pilih item pada daftar dulu.", "Info",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                _items.Remove(sel);
+                SaveToDisk();
             }
         }
 
-        // ========= HAPUS (tombol per baris di kanan) =========
-        private void dgv_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        // Fallback: sebagian environment memicu CellClick
+        private void dgv_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
             if (dgv.Columns[e.ColumnIndex].Name != "colDel") return;
@@ -171,39 +205,45 @@ namespace DailyRoutineTracker
         private bool ConfirmDelete(RoutineItem sel)
         {
             var ok = MessageBox.Show(
-                $"Hapus '{sel.Activity}' ({sel.At:dd MMM yyyy HH:mm})?",
+                $"Hapus '{sel.Activity}' ({sel.Tanggal} {sel.WaktuRange})?",
                 "Konfirmasi", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             return ok == DialogResult.Yes;
         }
 
-        // ========= EXPORT JSON (btnjson) =========
-        private void btnjson_Click(object sender, EventArgs e)
+        // ================== EXPORT TXT (btntxt) ==================
+        private void btntxt_Click(object sender, EventArgs e)
         {
             using var sfd = new SaveFileDialog
             {
-                Filter = "JSON Files (*.json)|*.json",
-                FileName = $"Routine_{DateTime.Now:yyyyMMdd_HHmm}.json"
+                Filter = "Text Files (*.txt)|*.txt",
+                FileName = $"Routine_{DateTime.Now:yyyyMMdd_HHmm}.txt"
             };
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
-                    var list = _items.OrderBy(i => i.At).ToList();
-                    var json = JsonSerializer.Serialize(list,
-                        new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(sfd.FileName, json);
-                    MessageBox.Show("Berhasil diexport.", "Sukses",
+                    var lines = _items
+                        .OrderBy(i => i.StartAt)
+                        .ThenBy(i => i.EndAt)
+                        .Select(i => $"{i.Tanggal}\t{i.WaktuRange}\t{i.Activity}")
+                        .ToArray();
+
+                    var header = "Tanggal\tWaktu\tKegiatan";
+                    var content = header + Environment.NewLine + string.Join(Environment.NewLine, lines);
+
+                    File.WriteAllText(sfd.FileName, content, Encoding.UTF8);
+                    MessageBox.Show("Berhasil diekspor ke .txt", "Sukses",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Gagal export: {ex.Message}", "Error",
+                    MessageBox.Show($"Gagal ekspor: {ex.Message}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
 
-        // ========= SAVE / LOAD =========
+        // ================== SAVE / LOAD (internal JSON) ==================
         private void SaveToDisk()
         {
             try
@@ -211,7 +251,7 @@ namespace DailyRoutineTracker
                 Directory.CreateDirectory(_folder);
                 var json = JsonSerializer.Serialize(_items.ToList(),
                     new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(FilePath, json);
+                File.WriteAllText(FilePath, json, Encoding.UTF8);
             }
             catch (Exception ex)
             {
@@ -225,7 +265,7 @@ namespace DailyRoutineTracker
             try
             {
                 if (!File.Exists(FilePath)) return new List<RoutineItem>();
-                var json = File.ReadAllText(FilePath);
+                var json = File.ReadAllText(FilePath, Encoding.UTF8);
                 return JsonSerializer.Deserialize<List<RoutineItem>>(json) ?? new List<RoutineItem>();
             }
             catch
@@ -234,10 +274,10 @@ namespace DailyRoutineTracker
             }
         }
 
-        // ========= Helper =========
+        // ================== HELPER ==================
         private void Resort()
         {
-            var ordered = _items.OrderBy(i => i.At).ToList();
+            var ordered = _items.OrderBy(i => i.StartAt).ThenBy(i => i.EndAt).ToList();
             _items = new BindingList<RoutineItem>(ordered);
             _bs.DataSource = _items;
             dgv.DataSource = _bs;
@@ -247,32 +287,34 @@ namespace DailyRoutineTracker
         {
             dtpdate.Value = DateTime.Today;
             dtptime.Value = DateTime.Today.AddHours(8);
+            dtptimes.Value = DateTime.Today.AddHours(9);
             txtbactivity.Text = "";
         }
 
         private string GetActivityText()
         {
             var s = txtbactivity.Text ?? "";
-            s = s.Replace("\u200B", "")    // zero-width space
-                 .Replace("\u00A0", " ");  // non-breaking space
+            s = s.Replace("\u200B", "")   // zero-width space
+                 .Replace("\u00A0", " "); // non-breaking space
             return s.Trim();
         }
 
-        // ========= Handler kosong yang kamu miliki (tetap dipertahankan) =========
-        private void button1_Click(object sender, EventArgs e) { }        // tidak dipakai
+        // ================== STUB HANDLERS (opsional; aman untuk Designer) ==================
+        // Kalau Designer masih mengacu ke handler lama, biarkan stub kosong ini.
+        private void button1_Click(object sender, EventArgs e) { }
         private void label1_Click(object sender, EventArgs e) { }
+        private void label2_Click(object sender, EventArgs e) { }
         private void label4_Click(object sender, EventArgs e) { }
         private void lbltngl_Click(object sender, EventArgs e) { }
         private void lblwkt_Click(object sender, EventArgs e) { }
         private void dtptime_ValueChanged(object sender, EventArgs e) { }
-        private void tlpLeft_Paint(object sender, PaintEventArgs e) { }
-        private void pright_Paint(object sender, PaintEventArgs e) { }
         private void txtbactivity_TextChanged(object sender, EventArgs e) { }
         private void dtpdate_ValueChanged(object sender, EventArgs e) { }
-
-        private void pleft_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
+        private void pleft_Paint(object sender, PaintEventArgs e) { }
+        private void pright_Paint(object sender, PaintEventArgs e) { }
+        private void tlpLeft_Paint(object sender, PaintEventArgs e) { }
+        private void btntxt_Click_1(object sender, EventArgs e) { }
+        private void dateTimePicker1_ValueChanged(object sender, EventArgs e) { }
+        private void dateTimePicker1_ValueChanged_1(object sender, EventArgs e) { }
     }
 }
